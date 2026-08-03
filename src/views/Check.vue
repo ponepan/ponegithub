@@ -2,7 +2,7 @@
   <div class="container">
     <div class="block-card">
       <van-notice-bar background="#fff7cc" color="#d48806" :scrollable="true">
-        最多批量核对20注；号码保存在本地浏览器，清理缓存数据会丢失
+        {{ isMember ? '✅ 会员专享：无上限批量核对' : '免费版：最多批量核对 20 注；开通会员享无上限批量导入' }}
       </van-notice-bar>
       <h3 class="title">
         <van-icon name="arrow-left" class="back-btn" @click="$emit('back-to-home')" />
@@ -141,7 +141,7 @@
       </div>
 
       <van-button block type="primary" style="margin: 10px 0" @click="handleAdd">
-        添加到列表（{{ batchList.length }}/{{ MAX_COUNT }}）
+        添加到列表（{{ batchList.length }}/{{ isMember ? '∞' : FREE_MAX }}）
       </van-button>
 
       <!-- 核对结果弹窗 -->
@@ -215,6 +215,9 @@
         </div>
       </div>
     </div>
+
+    <!-- 全局免责声明 -->
+    <DisclaimerFooter />
   </div>
 </template>
 
@@ -226,6 +229,10 @@ import {
   checkCompoundNum, detectEntryType, getCompoundComboCount, COMPOUND_LIMITS
 } from '@/utils/validate'
 import { queryDrawResult } from '@/utils/lotteryApi'
+import { useUserStore } from '@/stores/user'
+import DisclaimerFooter from '@/components/DisclaimerFooter.vue'
+
+const { isMember, requireMember } = useUserStore()
 
 // 彩种图标映射
 import ssqIcon from '@/assets/icons/ssq.svg'
@@ -700,7 +707,8 @@ const drawNums = ref('')
 const inputNum = ref('')
 const batchList = ref([])
 const resultList = ref([])
-const MAX_COUNT = 20
+const FREE_MAX = 20
+const MAX_COUNT = computed(() => isMember.value ? Infinity : FREE_MAX)
 const fetching = ref(false)
 const fetchError = ref('')
 const drawDate = ref('')
@@ -915,7 +923,10 @@ function addTemp() {
   pendingDigits.value = ''
   const check = validateLotteryNums(props.lotteryType, inputNum.value)
   if (!check.pass) return showToast(check.msg)
-  if (batchList.value.length >= MAX_COUNT) return showToast(`最多${MAX_COUNT}注`)
+  if (batchList.value.length >= MAX_COUNT.value && !isMember.value) {
+    requireMember()
+    return
+  }
 
   const stdNum = formatLotteryNums(props.lotteryType, inputNum.value)
   const entryType = detectEntryType(props.lotteryType, stdNum)

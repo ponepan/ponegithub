@@ -5,6 +5,13 @@
       📌 守号数据自动保存到浏览器本地，换浏览器或清理缓存会丢失。可导出备份。
     </van-notice-bar>
 
+    <!-- 免费用户公告广告（会员隐藏） -->
+    <div v-if="!isMember" class="ad-banner" @click="handleAdClick">
+      <div class="ad-banner-tag">公告</div>
+      <div class="ad-banner-text">开通云同步会员 · 纯净无广告 · 批量导出 · ¥9.9/月起</div>
+      <div class="ad-banner-arrow">›</div>
+    </div>
+
     <!-- 各彩种守号分组 -->
     <div class="block-card" v-for="(group, key) in saveData" :key="key">
       <van-cell :title="group.name" :value="`${group.list.length} 注`">
@@ -107,6 +114,9 @@
         </van-space>
       </div>
     </van-popup>
+
+    <!-- 全局免责声明 -->
+    <DisclaimerFooter />
   </div>
 </template>
 
@@ -125,6 +135,14 @@ import {
   getCompoundComboCount,
   COMPOUND_LIMITS
 } from '@/utils/validate'
+import { useUserStore } from '@/stores/user'
+import DisclaimerFooter from '@/components/DisclaimerFooter.vue'
+
+const { requireMember, isMember, showPayPopup } = useUserStore()
+
+function handleAdClick() {
+  showPayPopup.value = true
+}
 
 // 图标映射
 import ssqIcon from '@/assets/icons/ssq.svg'
@@ -619,6 +637,7 @@ async function clearGroup(key) {
 }
 
 function exportGroup(key) {
+  if (!requireMember()) return
   const data = { [key]: saveData[key] }
   const url = exportSaveData(data)
   const a = document.createElement('a')
@@ -630,6 +649,7 @@ function exportGroup(key) {
 }
 
 function exportAll() {
+  if (!requireMember()) return
   const plainData = {}
   Object.keys(saveData).forEach(key => {
     plainData[key] = { ...saveData[key], list: [...saveData[key].list] }
@@ -644,6 +664,7 @@ function exportAll() {
 }
 
 function importData() {
+  if (!requireMember()) return
   fileInputRef.value?.click()
 }
 
@@ -848,5 +869,43 @@ async function handleFileImport(e) {
   color: #ee0a24;
   font-size: 12px;
   padding: 2px 0 6px;
+}
+
+/* 免费用户公告广告 */
+.ad-banner {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+.ad-banner:active {
+  opacity: 0.9;
+}
+.ad-banner-tag {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+.ad-banner-text {
+  flex: 1;
+  font-size: 13px;
+  color: #fff;
+  line-height: 1.4;
+}
+.ad-banner-arrow {
+  font-size: 22px;
+  color: rgba(255,255,255,0.7);
+  margin-left: 6px;
 }
 </style>

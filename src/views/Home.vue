@@ -94,11 +94,15 @@
       <p>🎨 本工具所有图标均为原创矢量设计</p>
       <p>🔒 数据仅保存在您的浏览器本地</p>
     </div>
+
+    <!-- 全局免责声明 -->
+    <DisclaimerFooter />
   </div>
 </template>
 
 <script setup>
 import { LOTTERY_NAME_MAP } from '@/utils/validate'
+import DisclaimerFooter from '@/components/DisclaimerFooter.vue'
 
 // 品牌 logo
 import fcLogo from '@/assets/icons/fc-logo.svg'

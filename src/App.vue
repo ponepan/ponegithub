@@ -35,6 +35,9 @@
       </div>
     </div>
 
+    <!-- 会员付费弹窗（全局） -->
+    <MemberPayPopup />
+
     <!-- 底部 Tab 导航 -->
     <van-tabbar v-model="activeTab" :placeholder="true" fixed>
       <van-tabbar-item icon="home-o" name="home">首页</van-tabbar-item>
@@ -45,12 +48,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { showToast } from 'vant'
 import Home from '@/views/Home.vue'
 import Check from '@/views/Check.vue'
 import Group from '@/views/Group.vue'
 import MessageBoard from '@/views/MessageBoard.vue'
+import MemberPayPopup from '@/components/MemberPayPopup.vue'
 import { LOTTERY_NAME_MAP } from '@/utils/validate'
 
 const activeTab = ref('home')
@@ -135,6 +139,14 @@ function onBackToHome() {
   activeTab.value = 'home'
   loadedGroupList.value = null
 }
+
+/** 切换底部 Tab 时自动退出核对页 */
+watch(activeTab, () => {
+  if (showCheck.value) {
+    showCheck.value = false
+    loadedGroupList.value = null
+  }
+})
 </script>
 
 <style>
