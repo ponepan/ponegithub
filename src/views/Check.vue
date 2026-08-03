@@ -99,11 +99,11 @@
           <span
             :class="['mode-tab', { 'mode-active': !isCompoundMode }]"
             @click="switchToMode(false)"
-          >单式模式</span>
+          >单式选号</span>
           <span
             :class="['mode-tab', { 'mode-active': isCompoundMode }]"
             @click="switchToMode(true)"
-          >复式模式</span>
+          >复式选号</span>
           <!-- 前/后区切换（复式 SSQ/DLT 时显示） -->
           <template v-if="isCompoundMode && keypadConfig.hasSplit && keypadConfig.splitAfter === 'dynamic'">
             <van-button
@@ -471,9 +471,9 @@ const keypadHint = computed(() => {
   const t = props.lotteryType
   const cfg = keypadConfig.value
   if (cfg.isCompound) {
-    if (t === 'ssq') return `复式模式：红球≤${cfg.compoundMaxFront}个(1-33) / 蓝球≤${cfg.compoundMaxBack}个(1-16)  |  当前：${compoundZone.value === 'front' ? '红球区' : '蓝球区'}`
-    if (t === 'dlt') return `复式模式：前区≤${cfg.compoundMaxFront}个(1-35) / 后区≤${cfg.compoundMaxBack}个(1-12)  |  当前：${compoundZone.value === 'front' ? '前区' : '后区'}`
-    if (t === 'kl8') return `复式模式：可选${cfg.compoundMaxFront}个号码(1-80)，选出10个为一组`
+    if (t === 'ssq') return `复式选号：红球≤${cfg.compoundMaxFront}个(1-33) / 蓝球≤${cfg.compoundMaxBack}个(1-16)  |  当前：${compoundZone.value === 'front' ? '红球区' : '蓝球区'}`
+    if (t === 'dlt') return `复式选号：前区≤${cfg.compoundMaxFront}个(1-35) / 后区≤${cfg.compoundMaxBack}个(1-12)  |  当前：${compoundZone.value === 'front' ? '前区' : '后区'}`
+    if (t === 'kl8') return `复式选号：可选${cfg.compoundMaxFront}个号码(1-80)，选出10个为一组`
   }
   if (['fc3d', 'pl3'].includes(t)) return '点击数字输入（3位）'
   if (t === 'pl5') return '点击数字输入（5位）'

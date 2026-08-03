@@ -75,7 +75,7 @@
         <!-- 复式模式开关 -->
         <div v-if="supportsCompound" class="compound-toggle-row">
           <van-tag :type="isCompoundMode ? 'warning' : 'default'" size="large" plain @click="isCompoundMode = !isCompoundMode">
-            {{ isCompoundMode ? '📊 复式模式' : '📋 单式模式' }}
+            {{ isCompoundMode ? '📊 复式选号' : '📋 单式选号' }}
           </van-tag>
           <template v-if="isCompoundMode && keypadConfig.hasSplit && keypadConfig.splitAfter === 'dynamic'">
             <van-button

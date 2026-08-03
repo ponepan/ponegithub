@@ -3,7 +3,7 @@
     <van-notice-bar color="#fff" background="#ff4d4f" style="border-radius:10px;" :scrollable="true">
       ⚠️ 本工具仅号码比对娱乐，无法核验纸质彩票，理性购彩！禁止未成年人购彩
     </van-notice-bar>
-    <h2 class="page-title">🎫 彩票号码核对工具</h2>
+    <h2 class="page-title">🎫 彩票自动核对工具</h2>
 
     <!-- 福利彩票板块 -->
     <div class="block-card">
