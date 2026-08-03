@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="kl8Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff6b00"/>
+      <stop offset="100%" style="stop-color:#e05500"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="46" fill="url(#kl8Grad)" stroke="#c04800" stroke-width="1.5"/>
+  <!-- 8字 -->
+  <text x="50" y="42" text-anchor="middle" fill="white" font-size="26" font-weight="900" font-family="sans-serif">8</text>
+  <!-- 笑脸 -->
+  <circle cx="50" cy="55" r="3" fill="white"/>
+  <text x="50" y="84" text-anchor="middle" fill="white" font-size="12" font-weight="bold" font-family="sans-serif">快乐8</text>
+</svg>
