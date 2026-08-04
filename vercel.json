@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/fc-api/:path*",
+      "destination": "/api/fc-proxy/:path*"
+    },
+    {
+      "source": "/tc-api/:path*",
+      "destination": "/api/tc-proxy/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
