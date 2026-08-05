@@ -71,6 +71,46 @@ export function getKL8WinInfo(playN, matchCount) {
   }
 }
 
+/* ================================================================
+   双色球中奖规则（来源：中国福利彩票发行管理中心 cwl.gov.cn）
+   一等奖、二等奖为浮动奖，三等奖~六等奖为固定奖
+   ================================================================ */
+
+/**
+ * 双色球各奖级定义
+ * key: 'redMatch-blueMatch' 如 '6-1' 表示6红1蓝
+ */
+export const SSQ_WIN_RULES = [
+  { reds: 6, blue: true,  level: '一等奖', prize: '浮动奖金' },
+  { reds: 6, blue: false, level: '二等奖', prize: '浮动奖金' },
+  { reds: 5, blue: true,  level: '三等奖', prize: '3000元' },
+  { reds: 5, blue: false, level: '四等奖', prize: '200元' },
+  { reds: 4, blue: true,  level: '四等奖', prize: '200元' },
+  { reds: 4, blue: false, level: '五等奖', prize: '10元' },
+  { reds: 3, blue: true,  level: '五等奖', prize: '10元' },
+  { reds: 0, blue: true,  level: '六等奖', prize: '5元' },
+  { reds: 1, blue: true,  level: '六等奖', prize: '5元' },
+  { reds: 2, blue: true,  level: '六等奖', prize: '5元' }
+]
+
+/**
+ * 根据红球命中数和蓝球命中情况获取双色球中奖信息
+ * @param {number} redMatch - 红球命中个数 (0-6)
+ * @param {boolean} blueMatch - 蓝球是否命中
+ * @returns {{ win: boolean, level: string, prize: string }}
+ */
+export function getSSQWinInfo(redMatch, blueMatch) {
+  // 按规则顺序匹配（一等奖优先）
+  for (const rule of SSQ_WIN_RULES) {
+    if (rule.reds === redMatch && rule.blue === blueMatch) {
+      return { win: true, level: rule.level, prize: rule.prize }
+    }
+    // 六等奖：0-2 红 + 蓝球中 统一归为六等奖
+    // 规则表已覆盖，但用循环匹配更简洁
+  }
+  return { win: false, level: '未中奖', prize: '' }
+}
+
 /**
  * 检测号码类型：单式 / 复式
  * @returns {'single' | 'compound'}
@@ -391,24 +431,27 @@ function checkCompoundSSQ(userRedList, userBlueList, drawRedList, drawBlue) {
 
   const breakdown = []
 
+  // SSQ prize map for compound breakdown display
+  const ssqPrizes = { '一等奖': '浮动奖金', '二等奖': '浮动奖金', '三等奖': '3000元', '四等奖': '200元', '五等奖': '10元', '六等奖': '5元' }
+
   // 各奖级公式（按照中奖规则定义）
   const l1 = nPr(6) * bm
-  if (l1 > 0) breakdown.push({ level: '一等奖', count: l1 })
+  if (l1 > 0) breakdown.push({ level: '一等奖', count: l1, prize: ssqPrizes['一等奖'] })
 
   const l2 = nPr(6) * (bCount - bm)
-  if (l2 > 0) breakdown.push({ level: '二等奖', count: l2 })
+  if (l2 > 0) breakdown.push({ level: '二等奖', count: l2, prize: ssqPrizes['二等奖'] })
 
   const l3 = nPr(5) * bm
-  if (l3 > 0) breakdown.push({ level: '三等奖', count: l3 })
+  if (l3 > 0) breakdown.push({ level: '三等奖', count: l3, prize: ssqPrizes['三等奖'] })
 
   const l4 = nPr(5) * (bCount - bm) + nPr(4) * bm
-  if (l4 > 0) breakdown.push({ level: '四等奖', count: l4 })
+  if (l4 > 0) breakdown.push({ level: '四等奖', count: l4, prize: ssqPrizes['四等奖'] })
 
   const l5 = nPr(4) * (bCount - bm) + nPr(3) * bm
-  if (l5 > 0) breakdown.push({ level: '五等奖', count: l5 })
+  if (l5 > 0) breakdown.push({ level: '五等奖', count: l5, prize: ssqPrizes['五等奖'] })
 
   const l6 = (nPr(0) + nPr(1) + nPr(2)) * bm
-  if (l6 > 0) breakdown.push({ level: '六等奖', count: l6 })
+  if (l6 > 0) breakdown.push({ level: '六等奖', count: l6, prize: ssqPrizes['六等奖'] })
 
   const win = breakdown.length > 0
   const bestLevel = win ? breakdown[0].level : null

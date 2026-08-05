@@ -249,7 +249,8 @@ import { showToast } from 'vant'
 import {
   validateLotteryNums, formatLotteryNums, normalizeInput,
   checkCompoundNum, detectEntryType, getCompoundComboCount, COMPOUND_LIMITS,
-  getKL8WinInfo, KL8_PLAY_IDS, KL8_PLAY_RULES
+  getKL8WinInfo, KL8_PLAY_IDS, KL8_PLAY_RULES,
+  getSSQWinInfo
 } from '@/utils/validate'
 import { queryDrawResult } from '@/utils/lotteryApi'
 import { useUserStore } from '@/stores/user'
@@ -986,13 +987,8 @@ function checkSingleNum(userNum, drawNum, _kl8PlayN) {
     const dRedArr = dRed.split(',')
     const redMatch = uRedArr.filter(r => dRedArr.includes(r)).length
     const blueMatch = uBlue === dBlue
-    if (redMatch === 6 && blueMatch) return { win: true, level: '一等奖' }
-    if (redMatch === 6) return { win: true, level: '二等奖' }
-    if (redMatch === 5 && blueMatch) return { win: true, level: '三等奖' }
-    if (redMatch === 5 || (redMatch === 4 && blueMatch)) return { win: true, level: '四等奖' }
-    if (redMatch === 4 || (redMatch === 3 && blueMatch)) return { win: true, level: '五等奖' }
-    if (blueMatch) return { win: true, level: '六等奖' }
-    return { win: false, level: '未中奖' }
+    const info = getSSQWinInfo(redMatch, blueMatch)
+    return { win: info.win, level: info.level, prize: info.prize }
   }
 
   if (type === 'dlt') {
