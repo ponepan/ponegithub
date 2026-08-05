@@ -194,6 +194,58 @@ export function getFC3DWinInfo(userNum, drawNum) {
   return { win: true, level: FC3D_WIN_RULES.group6.level, prize: FC3D_WIN_RULES.group6.prize }
 }
 
+/* ================================================================
+   七星彩中奖规则（来源：中国体彩网 sporttery.cn，2020年改版后规则）
+   号码 = 前6位(000000-999999) + 最后1位(0-14)
+   一等奖、二等奖为浮动奖，三等奖~六等奖为固定奖
+   ================================================================ */
+
+/**
+ * 七星彩各奖级定义（key: 'frontMatch-backMatch'）
+ * frontMatch = 前6位中与开奖对应位置相同的个数(0-6)
+ * backMatch  = 最后1位是否相同(0/1)
+ * 共6个奖级，每注只兑最高奖级
+ */
+export const QXC_WIN_RULES = [
+  { front: 6, back: 1, level: '一等奖', prize: '浮动奖金' },
+  { front: 6, back: 0, level: '二等奖', prize: '浮动奖金' },
+  { front: 5, back: 1, level: '三等奖', prize: '3000元' },
+  { front: 5, back: 0, level: '四等奖', prize: '500元' },
+  { front: 4, back: 1, level: '四等奖', prize: '500元' },
+  { front: 4, back: 0, level: '五等奖', prize: '30元' },
+  { front: 3, back: 1, level: '五等奖', prize: '30元' },
+  { front: 3, back: 0, level: '六等奖', prize: '5元' },
+  { front: 1, back: 1, level: '六等奖', prize: '5元' },
+  { front: 0, back: 1, level: '六等奖', prize: '5元' }
+]
+
+/**
+ * 根据前6位命中数与末位命中情况获取七星彩中奖信息
+ * @param {string} userNum - 用户投注号码 (7位数字字符串)
+ * @param {string} drawNum - 开奖号码 (7位数字字符串)
+ * @returns {{ win: boolean, level: string, prize: string }}
+ */
+export function getQXCWinInfo(userNum, drawNum) {
+  if (!drawNum || drawNum.length !== 7 || userNum.length !== 7) {
+    return { win: false, level: '未开奖', prize: '' }
+  }
+
+  // 逐位比较前6位
+  let frontMatch = 0
+  for (let i = 0; i < 6; i++) {
+    if (userNum[i] === drawNum[i]) frontMatch++
+  }
+  // 末位是否相同
+  const backMatch = userNum[6] === drawNum[6] ? 1 : 0
+
+  for (const rule of QXC_WIN_RULES) {
+    if (rule.front === frontMatch && rule.back === backMatch) {
+      return { win: true, level: rule.level, prize: rule.prize }
+    }
+  }
+  return { win: false, level: '未中奖', prize: '' }
+}
+
 /**
  * 检测号码类型：单式 / 复式
  * @returns {'single' | 'compound'}
