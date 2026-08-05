@@ -26,6 +26,51 @@ export const COMPOUND_LIMITS = {
   kl8: { maxNumbers: 14, maxCombos: 10000 }
 }
 
+/* ================================================================
+   快乐8 十种玩法中奖规则（来源：中国福彩网 cwl.gov.cn）
+   ================================================================ */
+
+/**
+ * 快乐8 选一到选十玩法的中奖规则
+ * key: 玩法编号 (1=选一, 2=选二, ..., 10=选十)
+ * pickCount: 该玩法需要选择的号码个数
+ * levels: 命中k个号码对应的奖级名称
+ * prizes: 命中k个号码对应的奖金（选十中十、选九中九为浮动奖，标注说明）
+ */
+export const KL8_PLAY_RULES = {
+  1: { name: '选一', pickCount: 1, levels: { 1: '中1' }, prizes: { 1: '4.5元' } },
+  2: { name: '选二', pickCount: 2, levels: { 2: '中2' }, prizes: { 2: '19元' } },
+  3: { name: '选三', pickCount: 3, levels: { 3: '中3', 2: '中2' }, prizes: { 3: '52元', 2: '3元' } },
+  4: { name: '选四', pickCount: 4, levels: { 4: '中4', 3: '中3', 2: '中2' }, prizes: { 4: '93元', 3: '5元', 2: '3元' } },
+  5: { name: '选五', pickCount: 5, levels: { 5: '中5', 4: '中4', 3: '中3' }, prizes: { 5: '1000元', 4: '20元', 3: '3元' } },
+  6: { name: '选六', pickCount: 6, levels: { 6: '中6', 5: '中5', 4: '中4', 3: '中3' }, prizes: { 6: '2880元', 5: '30元', 4: '10元', 3: '3元' } },
+  7: { name: '选七', pickCount: 7, levels: { 7: '中7', 6: '中6', 5: '中5', 4: '中4', 0: '全不中' }, prizes: { 7: '8500元', 6: '300元', 5: '30元', 4: '4元', 0: '2元' } },
+  8: { name: '选八', pickCount: 8, levels: { 8: '中8', 7: '中7', 6: '中6', 5: '中5', 4: '中4', 0: '全不中' }, prizes: { 8: '50000元', 7: '800元', 6: '80元', 5: '10元', 4: '3元', 0: '2元' } },
+  9: { name: '选九', pickCount: 9, levels: { 9: '中9', 8: '中8', 7: '中7', 6: '中6', 5: '中5', 4: '中4', 0: '全不中' }, prizes: { 9: '最高25万(浮动)', 8: '2000元', 7: '225元', 6: '22元', 5: '5元', 4: '3元', 0: '2元' } },
+  10: { name: '选十', pickCount: 10, levels: { 10: '一等奖', 9: '二等奖', 8: '三等奖', 7: '四等奖', 6: '五等奖', 5: '六等奖', 0: '全不中奖' }, prizes: { 10: '最高500万(浮动)', 9: '8000元', 8: '720元', 7: '80元', 6: '5元', 5: '3元', 0: '2元' } }
+}
+
+/** 快乐8所有玩法编号列表 */
+export const KL8_PLAY_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+/**
+ * 根据快乐8玩法和中奖号码命中个数，获取中奖信息
+ * @param {number} playN - 玩法编号 (1-10)
+ * @param {number} matchCount - 用户号码中命中开奖号码的个数
+ * @returns {{ win: boolean, level: string, prize: string }}
+ */
+export function getKL8WinInfo(playN, matchCount) {
+  const rule = KL8_PLAY_RULES[playN]
+  if (!rule) return { win: false, level: '未中奖', prize: '' }
+  const level = rule.levels[matchCount]
+  const prize = rule.prizes[matchCount] || ''
+  return {
+    win: !!level,
+    level: level || '未中奖',
+    prize
+  }
+}
+
 /**
  * 检测号码类型：单式 / 复式
  * @returns {'single' | 'compound'}
@@ -52,13 +97,15 @@ export function detectEntryType(type, nums) {
     const count = raw.split(',').filter(Boolean).length
     return count > 10 ? 'compound' : 'single'
   }
+  // 注：kl8 的玩法 (选一到选十) 在 checkCompoundNum / KL8PlayN 中单独控制，
+  // 此处仅判断基本单复式
   return 'single'
 }
 
 /**
  * 计算复式投注总注数
  */
-export function getCompoundComboCount(type, nums) {
+export function getCompoundComboCount(type, nums, kl8PlayN = 10) {
   const raw = normalizeInput(type, nums)
   if (!raw) return 0
 
@@ -76,7 +123,7 @@ export function getCompoundComboCount(type, nums) {
   }
   if (type === 'kl8') {
     const nums_ = raw.split(',').filter(Boolean).length
-    return C(nums_, 10)
+    return C(nums_, kl8PlayN)
   }
   return 1
 }
@@ -251,21 +298,17 @@ export function validateLotteryNums(type, nums) {
       return { pass: true }
     }
     case 'kl8': {
-      // 匹配 10-14 个号码
-      const regSingle = /^(\d{1,2},){9}\d{1,2}$/
-      const regCompound = /^(\d{1,2},){10,13}\d{1,2}$/
-      if (!regSingle.test(val) && !regCompound.test(val)) {
-        return { pass: false, msg: '格式错误！单式选10个号码，复式选11~14个号码，示例：01,05,11,22,33,44,55,66,70,77' }
+      // 任意数量号码（1~14个），玩法选择器控制具体选几个
+      const regBare = /^(\d{1,2},)*\d{1,2}$/
+      if (!regBare.test(val)) {
+        return { pass: false, msg: '格式错误！请输入逗号分隔的号码，示例：01,05,11,22,33' }
       }
       const numList = val.split(',').map(Number)
       const nCount = numList.length
+      if (nCount < 1) return { pass: false, msg: '至少输入1个号码' }
       if (numList.some(n => n < 1 || n > 80)) return { pass: false, msg: '快乐8号码范围 01~80' }
       if (new Set(numList).size !== nCount) return { pass: false, msg: '必须不重复号码' }
-      if (nCount > 10) {
-        if (nCount > lim.maxNumbers) return { pass: false, msg: `复式最多选${lim.maxNumbers}个号码` }
-        const combos = C(nCount, 10)
-        if (combos > lim.maxCombos) return { pass: false, msg: `复式注数${combos}注超出上限${lim.maxCombos}注，请减少选号` }
-      }
+      if (nCount > lim.maxNumbers) return { pass: false, msg: `最多选${lim.maxNumbers}个号码` }
       return { pass: true }
     }
     default:
@@ -456,44 +499,50 @@ function checkCompoundDLT(userFrontList, userBackList, drawFrontList, drawBackLi
 /**
  * 快乐8复式核对
  *
+ * @param {number[]} userNumList - 用户所选号码数组
+ * @param {number[]} drawNumList - 开奖号码数组（20个）
+ * @param {number} playN - 玩法编号（1=选一...10=选十），默认10
+ *
  * 算法核心：
- *   nPr(k) = C(m, k) × C(|U|-m, 10-k)  — 恰好命中 k 个号码的组合数
+ *   nPr(k) = C(m, k) × C(|U|-m, playN-k)  — 恰好命中 k 个号码的组合数
  */
-function checkCompoundKL8(userNumList, drawNumList) {
+function checkCompoundKL8(userNumList, drawNumList, playN = 10) {
   const m = userNumList.filter(n => drawNumList.includes(n)).length
   const uCount = userNumList.length
-  const totalCombos = C(uCount, 10)
+  const totalCombos = C(uCount, playN)
 
-  const nPr = (k) => C(m, k) * C(uCount - m, 10 - k)
+  const nPr = (k) => C(m, k) * C(uCount - m, playN - k)
 
-  const levelMap = {
-    10: '一等奖', 9: '二等奖', 8: '三等奖',
-    7: '四等奖', 6: '五等奖', 5: '六等奖',
-    0: '全不中奖'
-  }
+  const rule = KL8_PLAY_RULES[playN]
+  const levelMap = rule ? rule.levels : {}
+  const prizeMap = rule ? rule.prizes : {}
 
   const breakdown = []
-  for (let k = 10; k >= 0; k--) {
+  // 从命中最多到最少遍历
+  for (let k = playN; k >= 0; k--) {
     const level = levelMap[k]
     if (level) {
       const count = nPr(k)
-      if (count > 0) breakdown.push({ level, count })
+      if (count > 0) {
+        breakdown.push({ level, count, match: k, prize: prizeMap[k] || '' })
+      }
     }
   }
 
-  // 注：KL8 中 1-4 个 match 不中奖（计入未中奖注数）
-  const win = breakdown.length > 0
+  // 是否有中奖（排除「全不中」命中0个但仍有两元的情况）
+  const realWins = breakdown.filter(b => b.match > 0 || (b.match === 0 && levelMap[0]))
+  const win = realWins.length > 0
 
   return {
     comboCount: totalCombos,
-    win: breakdown.length > 0 && breakdown[0].level !== '全不中奖',
-    // "全不中奖"也是中奖（有固定奖金），但展示时单独处理
-    hasPrize: breakdown.filter(b => b.level !== '全不中奖').length > 0,
+    playN,
+    win,
     bestLevel: breakdown.length > 0 ? breakdown[0].level : null,
     breakdown,
     matchInfo: {
       matchCount: m,
-      userCount: uCount
+      userCount: uCount,
+      playN
     }
   }
 }
@@ -507,7 +556,7 @@ function checkCompoundKL8(userNumList, drawNumList) {
  * @param {string} drawNum - 开奖号码字符串
  * @returns {{ comboCount: number, win: boolean, bestLevel: string|null, breakdown: Array, matchInfo: object }}
  */
-export function checkCompoundNum(type, userCompoundNum, drawNum) {
+export function checkCompoundNum(type, userCompoundNum, drawNum, kl8PlayN = 10) {
   const entryType = detectEntryType(type, userCompoundNum)
   if (entryType !== 'compound') {
     return null  // 非复式不做复式核对
@@ -540,7 +589,7 @@ export function checkCompoundNum(type, userCompoundNum, drawNum) {
   if (type === 'kl8') {
     const userNums = userRaw.split(',').map(n => n.padStart(2, '0'))
     const drawNums = drawRaw.split(',').map(n => n.padStart(2, '0'))
-    return checkCompoundKL8(userNums, drawNums)
+    return checkCompoundKL8(userNums, drawNums, kl8PlayN)
   }
 
   return null

@@ -46,6 +46,18 @@
         <van-button size="mini" type="primary" @click="manualQuery">手动查询</van-button>
       </div>
 
+      <!-- 快乐8玩法选择器 -->
+      <div v-if="props.lotteryType === 'kl8' && drawNums" class="kl8-play-selector">
+        <span class="kl8-play-label">玩法：</span>
+        <div class="kl8-play-tabs">
+          <span
+            v-for="n in 10" :key="n"
+            :class="['kl8-play-tab', { active: kl8PlayN === n }]"
+            @click="kl8PlayN = n"
+          >选{{ n }}</span>
+        </div>
+      </div>
+
       <!-- 待核对号码列表 -->
       <van-cell-group>
         <van-cell title="待核对号码列表" />
@@ -59,6 +71,13 @@
               plain
               style="margin-left: 6px"
             >复式 {{ item.comboCount }}注</van-tag>
+            <van-tag
+              v-if="item.kl8PlayN"
+              type="primary"
+              size="small"
+              plain
+              style="margin-left: 6px"
+            >选{{ item.kl8PlayN }}</van-tag>
           </template>
           <template #label>{{ item.remark }}</template>
           <template #right-icon>
@@ -189,6 +208,7 @@
                 <div class="result-nums">
                   {{ res.nums }}
                   <van-tag v-if="res.entryType === 'compound'" type="warning" size="mini" plain>复式{{ res.comboCount }}注</van-tag>
+                  <van-tag v-if="res.kl8PlayN" type="primary" size="mini" plain style="margin-left:4px">选{{ res.kl8PlayN }}</van-tag>
                 </div>
                 <div class="result-remark">{{ res.remark }}</div>
                 <!-- 复式中奖细项 -->
@@ -197,6 +217,7 @@
                   <div v-for="b in res.breakdown" :key="b.level" class="breakdown-item">
                     <span class="breakdown-level">{{ b.level }}</span>
                     <span class="breakdown-count">{{ b.count }} 注</span>
+                    <span v-if="b.prize" class="breakdown-prize">{{ b.prize }}</span>
                   </div>
                 </div>
               </div>
@@ -204,6 +225,7 @@
                 <span :class="['result-badge', res.win ? 'badge-win' : 'badge-lose']">
                   {{ res.win ? '🎯 ' : '' }}{{ res.level }}
                 </span>
+                <span v-if="res.prize" class="result-prize">{{ res.prize }}</span>
               </div>
             </div>
           </div>
@@ -226,7 +248,8 @@ import { ref, computed, watch } from 'vue'
 import { showToast } from 'vant'
 import {
   validateLotteryNums, formatLotteryNums, normalizeInput,
-  checkCompoundNum, detectEntryType, getCompoundComboCount, COMPOUND_LIMITS
+  checkCompoundNum, detectEntryType, getCompoundComboCount, COMPOUND_LIMITS,
+  getKL8WinInfo, KL8_PLAY_IDS, KL8_PLAY_RULES
 } from '@/utils/validate'
 import { queryDrawResult } from '@/utils/lotteryApi'
 import { useUserStore } from '@/stores/user'
@@ -251,6 +274,9 @@ const props = defineProps({
   loadedGroupList: { type: Array, default: null }
 })
 const emit = defineEmits(['back-to-home'])
+
+/** 快乐8玩法选择 (1=选一 ... 10=选十)，默认选十 */
+const kl8PlayN = ref(10)
 
 const lotteryIcon = computed(() => iconMap[props.lotteryType] || ssqIcon)
 
@@ -391,7 +417,7 @@ const keypadConfig = computed(() => {
   // 单式模式
   if (t === 'ssq') return { groupSize: 2, totalCount: 7, separator: ',', hasSplit: true, splitAfter: 6, frontCount: 6, backCount: 1, frontMax: 33, backMax: 16, frontMin: 1, backMin: 1, isCompound: false }
   if (t === 'dlt') return { groupSize: 2, totalCount: 7, separator: ',', hasSplit: true, splitAfter: 5, frontCount: 5, backCount: 2, frontMax: 35, backMax: 12, frontMin: 1, backMin: 1, isCompound: false }
-  if (t === 'kl8') return { groupSize: 2, totalCount: 10, separator: ',', hasSplit: false, splitAfter: 0, frontCount: 0, backCount: 0, frontMax: 80, backMax: 0, frontMin: 1, backMin: 0, isCompound: false }
+  if (t === 'kl8') return { groupSize: 2, totalCount: kl8PlayN.value, separator: ',', hasSplit: false, splitAfter: 0, frontCount: 0, backCount: 0, frontMax: 80, backMax: 0, frontMin: 1, backMin: 0, isCompound: false }
   return { groupSize: 1, totalCount: 10, separator: '', hasSplit: false, splitAfter: 0, frontCount: 0, backCount: 0, isCompound: false }
 })
 
@@ -480,14 +506,14 @@ const keypadHint = computed(() => {
   if (cfg.isCompound) {
     if (t === 'ssq') return `复式选号：红球≤${cfg.compoundMaxFront}个(1-33) / 蓝球≤${cfg.compoundMaxBack}个(1-16)  |  当前：${compoundZone.value === 'front' ? '红球区' : '蓝球区'}`
     if (t === 'dlt') return `复式选号：前区≤${cfg.compoundMaxFront}个(1-35) / 后区≤${cfg.compoundMaxBack}个(1-12)  |  当前：${compoundZone.value === 'front' ? '前区' : '后区'}`
-    if (t === 'kl8') return `复式选号：可选${cfg.compoundMaxFront}个号码(1-80)，选出10个为一组`
+    if (t === 'kl8') return `复式选号：可选${cfg.compoundMaxFront}个号码(1-80)，选出${kl8PlayN.value}个为一组`
   }
   if (['fc3d', 'pl3'].includes(t)) return '点击数字输入（3位）'
   if (t === 'pl5') return '点击数字输入（5位）'
   if (t === 'qxc') return '点击数字输入（7位）'
   if (t === 'ssq') return '逐个输入号码：点击数字 + 按 ✓ 确认（红球6个 1-33，蓝球1个 1-16）'
   if (t === 'dlt') return '逐个输入号码：点击数字 + 按 ✓ 确认（前区5个 1-35，后区2个 1-12）'
-  if (t === 'kl8') return '逐个输入号码：点击数字 + 按 ✓ 确认（选10个，1-80）'
+  if (t === 'kl8') return `逐个输入号码：点击数字 + 按 ✓ 确认（选${kl8PlayN.value}个，1-80）`
   return '点击数字输入'
 })
 
@@ -826,7 +852,10 @@ const bestLevel = computed(() => {
   if (winResults.length === 0) return ''
   // 按奖项等级排序（一等奖最优先）
   const order = ['一等奖', '二等奖', '三等奖', '四等奖', '五等奖', '六等奖', '七等奖', '八等奖',
-    '直选', '组选', '全不中奖']
+    '直选', '组选',
+    // 快乐8 各玩法奖级
+    '中10', '中9', '中8', '中7', '中6', '中5', '中4', '中3', '中2', '中1',
+    '全不中奖', '全不中']
   const sorted = [...winResults].sort((a, b) => {
     const ai = order.indexOf(a.level), bi = order.indexOf(b.level)
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
@@ -863,6 +892,11 @@ const emotion = computed(() => {
   // 有高奖
   if (['二等奖', '三等奖'].includes(best) && wins > 0) {
     return { emoji: '🔥', title: `中了${best}！`, subtitle: `${wins}/${total} 注中奖，财运亨通！` }
+  }
+
+  // 快乐8高命中级数
+  if (best && best.startsWith('中') && parseInt(best.slice(1)) >= 8) {
+    return { emoji: '🔥', title: `${best}！大丰收！`, subtitle: `${wins}/${total} 注中奖，手气真旺！` }
   }
 
   // 大部分中奖
@@ -930,8 +964,8 @@ function addTemp() {
 
   const stdNum = formatLotteryNums(props.lotteryType, inputNum.value)
   const entryType = detectEntryType(props.lotteryType, stdNum)
-  const comboCount = entryType === 'compound' ? getCompoundComboCount(props.lotteryType, stdNum) : 1
-  batchList.value.push({ nums: stdNum, remark: '临时号码', entryType, comboCount })
+  const comboCount = entryType === 'compound' ? getCompoundComboCount(props.lotteryType, stdNum, kl8PlayN.value) : 1
+  batchList.value.push({ nums: stdNum, remark: '临时号码', entryType, comboCount, kl8PlayN: kl8PlayN.value })
   inputNum.value = ''
   compoundFrontCount.value = 0
   showToast(entryType === 'compound' ? `复式添加成功（${comboCount}注）` : '添加成功')
@@ -940,7 +974,7 @@ function addTemp() {
 /**
  * 简单的号码比对逻辑（基础版）
  */
-function checkSingleNum(userNum, drawNum) {
+function checkSingleNum(userNum, drawNum, _kl8PlayN) {
   // 针对不同彩种做简单比对
   const type = props.lotteryType
 
@@ -1003,14 +1037,9 @@ function checkSingleNum(userNum, drawNum) {
     const uArr = userNum.split(',')
     const dArr = drawNum.split(',')
     const match = uArr.filter(n => dArr.includes(n)).length
-    if (match === 10) return { win: true, level: '一等奖' }
-    if (match === 9) return { win: true, level: '二等奖' }
-    if (match === 8) return { win: true, level: '三等奖' }
-    if (match === 7) return { win: true, level: '四等奖' }
-    if (match === 6) return { win: true, level: '五等奖' }
-    if (match === 5) return { win: true, level: '六等奖' }
-    if (match === 0) return { win: true, level: '全不中奖' }
-    return { win: false, level: '未中奖' }
+    const playN = _kl8PlayN || kl8PlayN.value
+    const info = getKL8WinInfo(playN, match)
+    return { win: info.win, level: info.level, prize: info.prize }
   }
 
   return { win: false, level: '未开奖' }
@@ -1029,19 +1058,22 @@ function batchCheck() {
   const stdDraw = formatLotteryNums(props.lotteryType, draw)
   resultList.value = batchList.value.map(item => {
     const isCompound = item.entryType === 'compound'
+    const playN = item.kl8PlayN || kl8PlayN.value
 
     if (isCompound) {
-      const compoundResult = checkCompoundNum(props.lotteryType, item.nums, stdDraw)
+      const compoundResult = checkCompoundNum(props.lotteryType, item.nums, stdDraw, playN)
       if (!compoundResult) {
         // 降级为单式核对
-        const singleResult = checkSingleNum(item.nums, stdDraw)
+        const singleResult = checkSingleNum(item.nums, stdDraw, playN)
         return {
           nums: item.nums,
           remark: item.remark,
           entryType: 'compound',
           comboCount: item.comboCount || 1,
+          kl8PlayN: props.lotteryType === 'kl8' ? playN : undefined,
           win: singleResult.win,
           level: singleResult.level,
+          prize: singleResult.prize,
           breakdown: []
         }
       }
@@ -1050,6 +1082,7 @@ function batchCheck() {
         remark: item.remark,
         entryType: 'compound',
         comboCount: compoundResult.comboCount,
+        kl8PlayN: props.lotteryType === 'kl8' ? playN : undefined,
         win: compoundResult.win,
         level: compoundResult.bestLevel || '未中奖',
         breakdown: compoundResult.breakdown || [],
@@ -1058,14 +1091,16 @@ function batchCheck() {
     }
 
     // 单式
-    const result = checkSingleNum(item.nums, stdDraw)
+    const result = checkSingleNum(item.nums, stdDraw, playN)
     return {
       nums: item.nums,
       remark: item.remark,
       entryType: 'single',
       comboCount: 1,
+      kl8PlayN: props.lotteryType === 'kl8' ? playN : undefined,
       win: result.win,
       level: result.level,
+      prize: result.prize,
       breakdown: []
     }
   })
@@ -1523,6 +1558,21 @@ function batchCheck() {
   color: #bbb;
   border: 1px solid #e8e8e8;
 }
+.result-prize {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ee0a24;
+  white-space: nowrap;
+  text-align: center;
+}
+.breakdown-prize {
+  font-size: 12px;
+  color: #ee0a24;
+  font-weight: 600;
+  margin-left: 6px;
+}
 
 /* 弹窗内按钮 */
 .result-popup .van-button {
@@ -1558,5 +1608,51 @@ function batchCheck() {
     transform: translateY(calc(100vh + 10px)) rotate(720deg) scale(0.3);
     opacity: 0;
   }
+}
+
+/* ===== 快乐8 玩法选择器 ===== */
+.kl8-play-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+.kl8-play-label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+.kl8-play-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.kl8-play-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  background: #f5f6f8;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s;
+}
+.kl8-play-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, #1989fa, #07c160);
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(25, 137, 250, 0.3);
+}
+.kl8-play-tab:active {
+  transform: scale(0.95);
 }
 </style>
