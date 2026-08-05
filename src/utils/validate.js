@@ -195,6 +195,48 @@ export function getFC3DWinInfo(userNum, drawNum) {
 }
 
 /* ================================================================
+   排列三中奖规则（来源：中国体彩网 lottery.gov.cn / sporttery.cn）
+   直选投注、组选3、组选6，均为固定奖
+   注意：排列三为体彩独立彩种，投注时需明确选择 直选/组选3/组选6
+   ================================================================ */
+
+/**
+ * 排列三各奖级定义（与福彩3D奖金相同，独立对照表）
+ */
+export const PL3_WIN_RULES = {
+  direct: { level: '直选',   prize: '1040元' },
+  group3: { level: '组选3',  prize: '346元' },
+  group6: { level: '组选6',  prize: '173元' }
+}
+
+/**
+ * 根据投注号码和开奖号码判断排列三中奖信息
+ * @param {string} userNum - 用户投注号码 (3位数字字符串，如 "123")
+ * @param {string} drawNum - 开奖号码 (3位数字字符串，如 "123")
+ * @returns {{ win: boolean, level: string, prize: string }}
+ */
+export function getPL3WinInfo(userNum, drawNum) {
+  if (!drawNum || drawNum.length !== 3) return { win: false, level: '未开奖' }
+
+  // 直选：完全按位匹配
+  if (userNum === drawNum) {
+    return { win: true, level: PL3_WIN_RULES.direct.level, prize: PL3_WIN_RULES.direct.prize }
+  }
+
+  // 组选：数字集合相同但顺序不同
+  const uSorted = userNum.split('').sort().join('')
+  const dSorted = drawNum.split('').sort().join('')
+  if (uSorted !== dSorted) return { win: false, level: '未中奖', prize: '' }
+
+  // 判断开奖号码形态：有重复数字 → 组选3；全不同 → 组选6
+  const hasDup = drawNum[0] === drawNum[1] || drawNum[0] === drawNum[2] || drawNum[1] === drawNum[2]
+  if (hasDup) {
+    return { win: true, level: PL3_WIN_RULES.group3.level, prize: PL3_WIN_RULES.group3.prize }
+  }
+  return { win: true, level: PL3_WIN_RULES.group6.level, prize: PL3_WIN_RULES.group6.prize }
+}
+
+/* ================================================================
    七星彩中奖规则（来源：中国体彩网 sporttery.cn，2020年改版后规则）
    号码 = 前6位(000000-999999) + 最后1位(0-14)
    一等奖、二等奖为浮动奖，三等奖~六等奖为固定奖

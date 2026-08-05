@@ -250,7 +250,7 @@ import {
   validateLotteryNums, formatLotteryNums, normalizeInput,
   checkCompoundNum, detectEntryType, getCompoundComboCount, COMPOUND_LIMITS,
   getKL8WinInfo, KL8_PLAY_IDS, KL8_PLAY_RULES,
-  getSSQWinInfo, getDLTWinInfo, getFC3DWinInfo, getQXCWinInfo
+  getSSQWinInfo, getDLTWinInfo, getFC3DWinInfo, getQXCWinInfo, getPL3WinInfo
 } from '@/utils/validate'
 import { queryDrawResult } from '@/utils/lotteryApi'
 import { useUserStore } from '@/stores/user'
@@ -1005,9 +1005,15 @@ function checkSingleNum(userNum, drawNum, _kl8PlayN) {
     return { win: info.win, level: info.level, prize: info.prize }
   }
 
-  if (type === 'fc3d' || type === 'pl3') {
+  if (type === 'fc3d') {
     if (!drawNum) return { win: false, level: '未开奖' }
     const info = getFC3DWinInfo(userNum, drawNum)
+    return { win: info.win, level: info.level, prize: info.prize }
+  }
+
+  if (type === 'pl3') {
+    if (!drawNum) return { win: false, level: '未开奖' }
+    const info = getPL3WinInfo(userNum, drawNum)
     return { win: info.win, level: info.level, prize: info.prize }
   }
 
