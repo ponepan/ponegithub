@@ -153,6 +153,47 @@ export function getDLTWinInfo(frontMatch, backMatch) {
   return { win: false, level: '未中奖', prize: '' }
 }
 
+/* ================================================================
+   福彩3D中奖规则（来源：中国福彩网 cwl.gov.cn）
+   单选(直选)、组选三、组选六，均为固定奖
+   ================================================================ */
+
+/**
+ * 福彩3D各奖级定义（同时适用于排列三 pl3）
+ */
+export const FC3D_WIN_RULES = {
+  direct:  { level: '直选',   prize: '1040元' },
+  group3:  { level: '组三',   prize: '346元' },
+  group6:  { level: '组六',   prize: '173元' }
+}
+
+/**
+ * 根据投注号码和开奖号码判断福彩3D中奖信息
+ * @param {string} userNum - 用户投注号码 (3位数字字符串，如 "123")
+ * @param {string} drawNum - 开奖号码 (3位数字字符串，如 "123")
+ * @returns {{ win: boolean, level: string, prize: string }}
+ */
+export function getFC3DWinInfo(userNum, drawNum) {
+  if (!drawNum || drawNum.length !== 3) return { win: false, level: '未开奖' }
+
+  // 直选：完全按位匹配
+  if (userNum === drawNum) {
+    return { win: true, level: FC3D_WIN_RULES.direct.level, prize: FC3D_WIN_RULES.direct.prize }
+  }
+
+  // 组选：数字集合相同但顺序不同
+  const uSorted = userNum.split('').sort().join('')
+  const dSorted = drawNum.split('').sort().join('')
+  if (uSorted !== dSorted) return { win: false, level: '未中奖', prize: '' }
+
+  // 判断开奖号码形态：有重复数字 → 组三；全不同 → 组六
+  const hasDup = drawNum[0] === drawNum[1] || drawNum[0] === drawNum[2] || drawNum[1] === drawNum[2]
+  if (hasDup) {
+    return { win: true, level: FC3D_WIN_RULES.group3.level, prize: FC3D_WIN_RULES.group3.prize }
+  }
+  return { win: true, level: FC3D_WIN_RULES.group6.level, prize: FC3D_WIN_RULES.group6.prize }
+}
+
 /**
  * 检测号码类型：单式 / 复式
  * @returns {'single' | 'compound'}
