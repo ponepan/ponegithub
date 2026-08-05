@@ -28,7 +28,7 @@
           <van-radio name="month" />
           <div class="pay-option-text">
             <span class="pay-option-title">月度会员</span>
-            <span class="pay-option-price"><strong>¥9.9</strong>/月</span>
+            <span class="pay-option-price"><strong>¥2</strong>/月</span>
           </div>
         </div>
         <div class="pay-option pay-option-recommend" :class="{ 'pay-option-checked': payType === 'year' }" @click="payType = 'year'">

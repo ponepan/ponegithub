@@ -8,7 +8,7 @@
     <!-- 免费用户公告广告（会员隐藏） -->
     <div v-if="!isMember" class="ad-banner" @click="handleAdClick">
       <div class="ad-banner-tag">公告</div>
-      <div class="ad-banner-text">开通云同步会员 · 纯净无广告 · 批量导出 · ¥9.9/月起</div>
+      <div class="ad-banner-text">开通云同步会员 · 纯净无广告 · 批量导出 · ¥2/月</div>
       <div class="ad-banner-arrow">›</div>
     </div>
 
