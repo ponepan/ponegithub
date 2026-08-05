@@ -1050,7 +1050,19 @@ function batchCheck() {
   if (!draw) return showToast('请输入开奖号码')
 
   // 校验开奖号码格式
-  const drawCheck = validateLotteryNums(props.lotteryType, draw)
+  let drawCheck = { pass: true, msg: '' }
+  if (props.lotteryType === 'kl8') {
+    // 快乐8 开奖号码固定 20 个，不做数量限制
+    if (!/^(\d{1,2},)*\d{1,2}$/.test(draw)) {
+      drawCheck = { pass: false, msg: '格式错误！请输入逗号分隔的号码' }
+    } else {
+      const arr = draw.split(',').map(Number)
+      if (arr.some(n => n < 1 || n > 80)) drawCheck = { pass: false, msg: '号码范围 01~80' }
+      else if (new Set(arr).size !== arr.length) drawCheck = { pass: false, msg: '必须不重复号码' }
+    }
+  } else {
+    drawCheck = validateLotteryNums(props.lotteryType, draw)
+  }
   if (!drawCheck.pass) return showToast(`开奖号码${drawCheck.msg}`)
 
   if (batchList.value.length === 0) return showToast('请先添加待核对号码')
