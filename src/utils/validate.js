@@ -237,6 +237,38 @@ export function getPL3WinInfo(userNum, drawNum) {
 }
 
 /* ================================================================
+   排列五中奖规则（来源：中国体彩网 sporttery.cn / 广东体彩 gdlottery.cn）
+   号码 = 从 00000-99999 中选一个5位数投注，每注2元
+   只设一个奖级：一等奖（固定奖），单注固定奖金 100000 元
+   ================================================================ */
+
+/**
+ * 排列五奖级定义（独立对照表，与排列三/福彩3D分开维护）
+ * 唯一中奖条件：5位数字与开奖号码完全相同且位置一致
+ */
+export const PL5_WIN_RULES = {
+  first: { level: '一等奖', prize: '100000元' }
+}
+
+/**
+ * 根据投注号码和开奖号码判断排列五中奖信息
+ * @param {string} userNum - 用户投注号码 (5位数字字符串，如 "12345")
+ * @param {string} drawNum - 开奖号码 (5位数字字符串，如 "12345")
+ * @returns {{ win: boolean, level: string, prize: string }}
+ */
+export function getPL5WinInfo(userNum, drawNum) {
+  if (!drawNum || drawNum.length !== 5 || userNum.length !== 5) {
+    return { win: false, level: '未开奖', prize: '' }
+  }
+
+  // 直选：5位按位完全一致
+  if (userNum === drawNum) {
+    return { win: true, level: PL5_WIN_RULES.first.level, prize: PL5_WIN_RULES.first.prize }
+  }
+  return { win: false, level: '未中奖', prize: '' }
+}
+
+/* ================================================================
    七星彩中奖规则（来源：中国体彩网 sporttery.cn，2020年改版后规则）
    号码 = 前6位(000000-999999) + 最后1位(0-14)
    一等奖、二等奖为浮动奖，三等奖~六等奖为固定奖
