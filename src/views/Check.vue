@@ -250,7 +250,7 @@ import {
   validateLotteryNums, formatLotteryNums, normalizeInput,
   checkCompoundNum, detectEntryType, getCompoundComboCount, COMPOUND_LIMITS,
   getKL8WinInfo, KL8_PLAY_IDS, KL8_PLAY_RULES,
-  getSSQWinInfo
+  getSSQWinInfo, getDLTWinInfo
 } from '@/utils/validate'
 import { queryDrawResult } from '@/utils/lotteryApi'
 import { useUserStore } from '@/stores/user'
@@ -1001,15 +1001,8 @@ function checkSingleNum(userNum, drawNum, _kl8PlayN) {
     const dBArr = dBack.split(',')
     const fMatch = uFArr.filter(f => dFArr.includes(f)).length
     const bMatch = uBArr.filter(b => dBArr.includes(b)).length
-    if (fMatch === 5 && bMatch === 2) return { win: true, level: '一等奖' }
-    if (fMatch === 5 && bMatch === 1) return { win: true, level: '二等奖' }
-    if (fMatch === 5 || (fMatch === 4 && bMatch === 2)) return { win: true, level: '三等奖' }
-    if (fMatch === 4 && bMatch === 1) return { win: true, level: '四等奖' }
-    if (fMatch === 3 && bMatch === 2) return { win: true, level: '五等奖' }
-    if (fMatch === 4 || (fMatch === 3 && bMatch === 1) || (fMatch === 2 && bMatch === 2)) return { win: true, level: '六等奖' }
-    if (fMatch === 3 || (fMatch === 1 && bMatch === 2) || (fMatch === 2 && bMatch === 1) || bMatch === 2) return { win: true, level: '七等奖' }
-    if ((fMatch === 1 && bMatch === 1) || (fMatch === 2) || bMatch === 1) return { win: true, level: '八等奖' }
-    return { win: false, level: '未中奖' }
+    const info = getDLTWinInfo(fMatch, bMatch)
+    return { win: info.win, level: info.level, prize: info.prize }
   }
 
   if (type === 'fc3d' || type === 'pl3') {

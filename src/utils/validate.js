@@ -111,6 +111,48 @@ export function getSSQWinInfo(redMatch, blueMatch) {
   return { win: false, level: '未中奖', prize: '' }
 }
 
+/* ================================================================
+   超级大乐透中奖规则（来源：中国体彩网 lottery.gov.cn）
+   一等奖、二等奖为浮动奖，三等奖~七等奖为固定奖
+   固定奖金额随奖池规模浮动（<8亿 / ≥8亿）
+   ================================================================ */
+
+/**
+ * 大乐透各奖级定义
+ * key: 'frontMatch-backMatch' 如 '5-2' 表示5前区2后区
+ * 共7个奖级，每注只兑最高奖级
+ */
+export const DLT_WIN_RULES = [
+  { front: 5, back: 2, level: '一等奖', prize: '浮动奖金' },
+  { front: 5, back: 1, level: '二等奖', prize: '浮动奖金' },
+  { front: 5, back: 0, level: '三等奖', prize: '5000~6666元' },
+  { front: 4, back: 2, level: '三等奖', prize: '5000~6666元' },
+  { front: 4, back: 1, level: '四等奖', prize: '300~380元' },
+  { front: 4, back: 0, level: '五等奖', prize: '150~200元' },
+  { front: 3, back: 2, level: '五等奖', prize: '150~200元' },
+  { front: 3, back: 1, level: '六等奖', prize: '15~18元' },
+  { front: 2, back: 2, level: '六等奖', prize: '15~18元' },
+  { front: 3, back: 0, level: '七等奖', prize: '5~7元' },
+  { front: 2, back: 1, level: '七等奖', prize: '5~7元' },
+  { front: 1, back: 2, level: '七等奖', prize: '5~7元' },
+  { front: 0, back: 2, level: '七等奖', prize: '5~7元' }
+]
+
+/**
+ * 根据前区命中数和后区命中数获取大乐透中奖信息
+ * @param {number} frontMatch - 前区命中个数 (0-5)
+ * @param {number} backMatch - 后区命中个数 (0-2)
+ * @returns {{ win: boolean, level: string, prize: string }}
+ */
+export function getDLTWinInfo(frontMatch, backMatch) {
+  for (const rule of DLT_WIN_RULES) {
+    if (rule.front === frontMatch && rule.back === backMatch) {
+      return { win: true, level: rule.level, prize: rule.prize }
+    }
+  }
+  return { win: false, level: '未中奖', prize: '' }
+}
+
 /**
  * 检测号码类型：单式 / 复式
  * @returns {'single' | 'compound'}
@@ -488,16 +530,18 @@ function checkCompoundDLT(userFrontList, userBackList, drawFrontList, drawBackLi
   const nPr_f = (k) => C(mf, k) * C(fCount - mf, 5 - k)
   const nPr_b = (j) => C(mb, j) * C(bCount - mb, 2 - j)
 
-  // 大乐透奖级映射（与 checkSingleNum 规则一致）
+  // DLT prize map for compound breakdown display
+  const dltPrizes = { '一等奖': '浮动奖金', '二等奖': '浮动奖金', '三等奖': '5000~6666元', '四等奖': '300~380元', '五等奖': '150~200元', '六等奖': '15~18元', '七等奖': '5~7元' }
+
+  // 大乐透奖级映射（来源：lottery.gov.cn，共7奖级）
   const getLevel = (k, j) => {
     if (k === 5 && j === 2) return '一等奖'
     if (k === 5 && j === 1) return '二等奖'
     if (k === 5 || (k === 4 && j === 2)) return '三等奖'
     if (k === 4 && j === 1) return '四等奖'
-    if (k === 3 && j === 2) return '五等奖'
-    if (k === 4 || (k === 3 && j === 1) || (k === 2 && j === 2)) return '六等奖'
+    if (k === 3 && j === 2 || k === 4) return '五等奖'
+    if (k === 3 && j === 1 || k === 2 && j === 2) return '六等奖'
     if (k === 3 || (k === 1 && j === 2) || (k === 2 && j === 1) || j === 2) return '七等奖'
-    if ((k === 1 && j === 1) || (k === 2) || j === 1) return '八等奖'
     return null
   }
 
@@ -517,10 +561,10 @@ function checkCompoundDLT(userFrontList, userBackList, drawFrontList, drawBackLi
   }
 
   // 按奖级从高到低排序
-  const levelOrder = ['一等奖', '二等奖', '三等奖', '四等奖', '五等奖', '六等奖', '七等奖', '八等奖']
+  const levelOrder = ['一等奖', '二等奖', '三等奖', '四等奖', '五等奖', '六等奖', '七等奖']
   const breakdown = levelOrder
     .filter(l => levelCount[l] > 0)
-    .map(l => ({ level: l, count: levelCount[l] }))
+    .map(l => ({ level: l, count: levelCount[l], prize: dltPrizes[l] }))
 
   const win = breakdown.length > 0
   const bestLevel = win ? breakdown[0].level : null
